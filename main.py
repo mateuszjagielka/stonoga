@@ -7,7 +7,6 @@ import os
 extention = '.wav'
 directory = '/home/pi/sounds/'
 filePrefix = ['ZS-', 'JK-', 'AD-', 'AM-']   # prefix per mode
-selectedMode = -1
 
 # GPIOs
 outPut = [2, 3, 17, 22, 10, 11, 5, 13]      # GPIO id according to keyboard lines: 1, 2, 3, 4, 5, 6, 7, 8
@@ -16,11 +15,9 @@ modeSelectInPut = [24, 7, 16, 20]           # GPIO id according to cables no.: 3
 modeSelectOutPut = 26
 # ledOutput = 15
 
-
 # Keyboard matrix
 MATRIX = [['P', 'O', 'N'], ['K', 'L', 'M'], ['S', 'R', 'Q'], ['H', 'I', 'J'], ['V', 'U', 'T'], ['E', 'F', 'G'],
           ['Z', 'Y', 'X', 'W'], ['A', 'B', 'C', 'D']]
-
 
 # GPIOs init:
 GPIO.setmode(GPIO.BCM)
@@ -53,6 +50,7 @@ try:
     while True:
 
         # Select mode
+        selectedMode = -1
         while True:
             if GPIO.input(modeSelectInPut[0]):
                 selectedMode = 0
@@ -82,7 +80,6 @@ try:
         startupFile.play()
         del startupFile
 
-
         while True:
 
             for i in range(len(outPut)):
@@ -110,22 +107,31 @@ try:
                     while GPIO.input(inPut[j]):
                         sleep(0.1)
 
-                    sleep(0.01)
-
                 GPIO.output(outPut[i], GPIO.LOW)
+            sleep(0.01)
 
-                # if GPIO.input():
-                #     mixer.stop()
-                #     endFile = mixer.Sound(directory + filePrefix[selectedMode] + 'End' + extention)
-                #     endFile.play()
-                #     os.system("echo Cześć! Tu Zbyszek Stonoga!")
-                #     while GPIO.input(26):
-                #         sleep(0.1)
-                #     while mixer.get_busy():
-                #         sleep(0.1)
-                #     # os.system("sudo poweroff")
+            # Select mode
+            testMode = -1
+            if GPIO.input(modeSelectInPut[0]):
+                testMode = 0
+                for i in [1, 2, 3]:
+                    if GPIO.input(modeSelectInPut[i]):
+                        testMode = i
 
-            sleep(0.1)
+            if selectedMode != testMode:
+
+                if mixer.get_busy():
+                    while mixer.get_busy():
+                        sleep(0.05)
+                    sleep(0.2)
+                endFile = mixer.Sound(directory + filePrefix[selectedMode] + 'End' + extention)
+                endFile.play()
+                os.system("echo Cześć! Tu Zbyszek Stonoga!")
+                while mixer.get_busy():
+                    sleep(0.1)
+                sleep(0.2)
+                # os.system("sudo poweroff")
+                break
 
 finally:
     GPIO.cleanup()
